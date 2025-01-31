@@ -11,62 +11,103 @@ if (!$resultado) {
     die("Error en la consulta: " . mysqli_error($conexion));
 }
 
+
 // Mostrar los resultados en formato de tabla
-echo "<table border='1'>
+echo "
+<h2> Listado de estudiantes </h2>
+
+<table border='1'>
         <tr>
             <th>ID</th>
             <th>Nombre</th>
             <th>Edad</th>
             <th>Curso</th>
-            <th>Promociona</th>
+            <th> Promociona </th>
         </tr>";
 
 // Recorrer cada fila de resultados y mostrarla
 while ($row = mysqli_fetch_assoc($resultado)) {
-    
-    if($row['nombre'] != "Ana"){
-    echo "<tr>
-            <td>" . $row['id'] . "</td>
-            <td>" . $row['nombre'] . "</td>
-            <td>" . $row['edad'] . "</td>
-            <td>" . $row['curso'] . "</td>
-            <td>" . $row['promociona'] . "</td>
-        </tr>";
-}
+    $nombre= $row['nombre'];
+    if ($nombre != "Ana"){
+        echo "<tr>
+                <td>" . $row['id'] . "</td>
+                <td>" . $nombre. "</td>
+                <td>" . $row['edad'] . "</td>
+                <td>" . $row['curso'] . "</td>
+                <td>" . $row['promociona'] . "</td>
+            </tr>";
+    }
 }
 
 // Cerrar la tabla HTML
 echo "</table>";
 
-echo "<h1> Menores de 20 </h1>";
 
-$query = "SELECT id, nombre, edad, curso, promociona FROM alumnos WHERE edad >= 20";
-$resultado = mysqli_query($conexion, $query); 
-echo "<table border='1'>
+// Mostrar los menores de 20 años en formato tabla
+// OPCION 1. FILTRAR EN LA CONSULTA.
+$query = "SELECT id, nombre, edad, curso, promociona FROM alumnos
+WHERE edad >= 20";
+$resultadoFiltrado = mysqli_query($conexion, $query);
+echo "
+<h2> Listado de estudiantes fistrado por edad > 20</h2>
+
+<table border='1'>
         <tr>
             <th>ID</th>
             <th>Nombre</th>
             <th>Edad</th>
             <th>Curso</th>
-            <th>Promociona</th>
+            <th> Promociona </th>
         </tr>";
 
 // Recorrer cada fila de resultados y mostrarla
-while ($row = mysqli_fetch_assoc($resultado)) {
-    
-    
+while ($row = mysqli_fetch_assoc($resultadoFiltrado)) {
     echo "<tr>
             <td>" . $row['id'] . "</td>
             <td>" . $row['nombre'] . "</td>
-            <td>" . $row['edad'] . "</td>
+            <td>" . $row['edad']. "</td>
             <td>" . $row['curso'] . "</td>
             <td>" . $row['promociona'] . "</td>
         </tr>";
-
+    
 }
 
 // Cerrar la tabla HTML
 echo "</table>";
+
+// OPCION 2. FILTRAR EN LOS RESULTADOS DE LA CONSULTA
+$query = "SELECT id, nombre, edad, curso, promociona FROM alumnos";
+$resultadoFiltrado2 = mysqli_query($conexion, $query);
+echo "
+<h2> Listado de estudiantes filtrado por edad >20. Opcion 2 </h2>
+
+<table border='1'>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Edad</th>
+            <th>Curso</th>
+            <th> Promociona </th>
+        </tr>";
+
+// Recorrer cada fila de resultados y mostrarla
+while ($row = mysqli_fetch_assoc($resultadoFiltrado2)) {
+    $edad = $row['edad'];
+    if($edad >= 20){
+        echo "<tr>
+                <td>" . $row['id'] . "</td>
+                <td>" . $row['nombre'] . "</td>
+                <td>" . $row['edad']. "</td>
+                <td>" . $row['curso'] . "</td>
+                <td>" . $row['promociona'] . "</td>
+            </tr>";
+    }
+    
+}
+
+// Cerrar la tabla HTML
+echo "</table>";
+
 // Cerrar la conexión a la base de datos (opcional si no lo necesitas aquí)
 // mysqli_close($conexion);
 ?>

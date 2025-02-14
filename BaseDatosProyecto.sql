@@ -4,14 +4,16 @@ CREATE DATABASE HotelDB;
 -- Usar la base de datos creada
 USE HotelDB;
 
--- Tabla de Clientes
-CREATE TABLE Clientes (
-    ID_cliente INT AUTO_INCREMENT PRIMARY KEY,
+-- Tabla de Usuarios (anteriormente Clientes)
+CREATE TABLE Usuarios (
+    ID_usuario INT AUTO_INCREMENT PRIMARY KEY,
     Nombre VARCHAR(100),
     Apellido VARCHAR(100),
     Email VARCHAR(100) UNIQUE,
     Teléfono VARCHAR(15),
-    Dirección VARCHAR(255)
+    Dirección VARCHAR(255),
+    Admin ENUM('Sí', 'No') DEFAULT 'No',
+    Contraseña VARCHAR(255) -- Almacenará la contraseña de forma segura
 );
 
 -- Tabla de Habitaciones
@@ -26,12 +28,12 @@ CREATE TABLE Habitaciones (
 -- Tabla de Reservas
 CREATE TABLE Reservas (
     ID_reserva INT AUTO_INCREMENT PRIMARY KEY,
-    ID_cliente INT,
+    ID_usuario INT,
     ID_habitación INT,
     Fecha_check_in DATE,
     Fecha_check_out DATE,
     Estado_reserva ENUM('Confirmada', 'Cancelada', 'Pendiente'),
-    FOREIGN KEY (ID_cliente) REFERENCES Clientes(ID_cliente),
+    FOREIGN KEY (ID_usuario) REFERENCES Usuarios(ID_usuario),
     FOREIGN KEY (ID_habitación) REFERENCES Habitaciones(ID_habitación)
 );
 
@@ -64,13 +66,15 @@ CREATE TABLE Trabajadores (
     Salario DECIMAL(10, 2)
 );
 
-INSERT INTO Clientes (Nombre, Apellido, Email, Teléfono, Dirección) VALUES
-('Pedro', 'González', 'pedro@email.com', '5553456789', 'Calle 10, Piso 2, Madrid'),
-('Laura', 'Ramírez', 'laura@email.com', '5556789012', 'Avenida del Sol 234, Barcelona'),
-('Luis', 'Sánchez', 'luis@email.com', '5559876540', 'Calle Luna 99, Valencia'),
-('Ana', 'Martínez', 'ana@email.com', '5551122334', 'Calle del Mar 76, Málaga'),
-('Javier', 'Moreno', 'javier@email.com', '5552233445', 'Calle Primavera 12, Sevilla');
+-- Insertar Usuarios (con contraseñas generadas)
+INSERT INTO Usuarios (Nombre, Apellido, Email, Teléfono, Dirección, Admin, Contraseña) VALUES
+('Pedro', 'González', 'pedro@email.com', '5553456789', 'Calle 10, Piso 2, Madrid', 'No', 'PedroGonzalez123!'),
+('Laura', 'Ramírez', 'laura@email.com', '5556789012', 'Avenida del Sol 234, Barcelona', 'No', 'LauraRamirez456$'),
+('Luis', 'Sánchez', 'luis@email.com', '5559876540', 'Calle Luna 99, Valencia', 'No', 'LuisSanchez789#'),
+('Ana', 'Martínez', 'ana@email.com', '5551122334', 'Calle del Mar 76, Málaga', 'No', 'AnaMartinez321@'),
+('Javier', 'Moreno', 'javier@email.com', '5552233445', 'Calle Primavera 12, Sevilla', 'No', 'JavierMoreno654%');
 
+-- Insertar Habitaciones
 INSERT INTO Habitaciones (Tipo, Precio_noche, Estado, Número_camas) VALUES
 ('Individual', 55.00, 'Disponible', 1),
 ('Doble', 90.00, 'Disponible', 2),
@@ -83,6 +87,7 @@ INSERT INTO Habitaciones (Tipo, Precio_noche, Estado, Número_camas) VALUES
 ('Doble', 95.00, 'Reservada', 2),
 ('Suite', 250.00, 'Disponible', 2);
 
+-- Insertar Servicios
 INSERT INTO Servicios (Nombre, Descripción, Precio) VALUES
 ('Wi-Fi', 'Conexión a internet en todo el hotel', 5.00),
 ('Desayuno', 'Buffet libre para el desayuno', 12.00),
@@ -92,6 +97,7 @@ INSERT INTO Servicios (Nombre, Descripción, Precio) VALUES
 ('Parking', 'Estacionamiento en el hotel', 10.00),
 ('Traslado al aeropuerto', 'Servicio de transporte privado al aeropuerto', 40.00);
 
+-- Insertar Trabajadores
 INSERT INTO Trabajadores (Nombre, Apellido, Cargo, Teléfono, Fecha_ingreso, Salario) VALUES
 ('Carlos', 'Gómez', 'Recepcionista', '5551234567', '2023-01-15', 1200.00),
 ('Ana', 'Martínez', 'Camarera', '5559876543', '2024-02-10', 900.00),
@@ -100,7 +106,8 @@ INSERT INTO Trabajadores (Nombre, Apellido, Cargo, Teléfono, Fecha_ingreso, Sal
 ('Sofía', 'Castro', 'Gerente', '5553142569', '2020-11-30', 2200.00),
 ('Luis', 'Pérez', 'Camarero', '5559871254', '2024-01-18', 950.00);
 
-INSERT INTO Reservas (ID_cliente, ID_habitación, Fecha_check_in, Fecha_check_out, Estado_reserva) VALUES
+-- Insertar Reservas
+INSERT INTO Reservas (ID_usuario, ID_habitación, Fecha_check_in, Fecha_check_out, Estado_reserva) VALUES
 (1, 1, '2025-03-10', '2025-03-12', 'Confirmada'),
 (2, 2, '2025-03-15', '2025-03-18', 'Confirmada'),
 (3, 3, '2025-03-17', '2025-03-19', 'Confirmada'),
@@ -109,6 +116,7 @@ INSERT INTO Reservas (ID_cliente, ID_habitación, Fecha_check_in, Fecha_check_ou
 (1, 6, '2025-04-01', '2025-04-03', 'Pendiente'),
 (3, 8, '2025-04-10', '2025-04-12', 'Pendiente');
 
+-- Insertar Servicios_Reservas
 INSERT INTO Servicios_Reservas (ID_reserva, ID_servicio, Cantidad) VALUES
 (1, 1, 2), -- Wi-Fi para la reserva 1
 (1, 2, 1), -- Desayuno para la reserva 1

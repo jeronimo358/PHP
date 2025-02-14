@@ -2,112 +2,58 @@
 // Incluir el archivo de conexión
 include('conexion.php'); // Asegúrate de que el archivo 'conexion.php' esté en el mismo directorio o ajusta la ruta
 
-// Consulta para obtener los datos de la tabla "alumnos"
-$query = "SELECT id, nombre, edad, curso, promociona FROM alumnos";
-$resultado = mysqli_query($conexion, $query);
+// Crear conexión
+$conn = new mysqli($servidor, $usuario, $contrasena, $nombre_base_datos);
 
-// Verificar si la consulta fue exitosa
-if (!$resultado) {
-    die("Error en la consulta: " . mysqli_error($conexion));
+// Verificar conexión
+if ($conn->connect_error) {
+    die("Conexión fallida: " . $conn->connect_error);
 }
 
+// Función para mostrar los resultados
+function mostrarDatos($conn, $query, $tabla) {
+    $result = $conn->query($query);
 
-// Mostrar los resultados en formato de tabla
-echo "
-<h2> Listado de estudiantes </h2>
+    if ($result->num_rows > 0) {
+        echo "<h2>Datos de la tabla: $tabla</h2>";
+        echo "<table border='1'><tr>";
+        
+        // Obtener los nombres de las columnas
+        $fieldInfo = $result->fetch_fields();
+        foreach ($fieldInfo as $val) {
+            echo "<th>" . $val->name . "</th>";
+        }
+        echo "</tr>";
 
-<table border='1'>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Edad</th>
-            <th>Curso</th>
-            <th> Promociona </th>
-        </tr>";
-
-// Recorrer cada fila de resultados y mostrarla
-while ($row = mysqli_fetch_assoc($resultado)) {
-    $nombre= $row['nombre'];
-    if ($nombre != "Ana"){
-        echo "<tr>
-                <td>" . $row['id'] . "</td>
-                <td>" . $nombre. "</td>
-                <td>" . $row['edad'] . "</td>
-                <td>" . $row['curso'] . "</td>
-                <td>" . $row['promociona'] . "</td>
-            </tr>";
+        // Mostrar los datos
+        while($row = $result->fetch_assoc()) {
+            echo "<tr>";
+            foreach ($row as $column) {
+                echo "<td>" . $column . "</td>";
+            }
+            echo "</tr>";
+        }
+        echo "</table><br>";
+    } else {
+        echo "0 resultados para la tabla: $tabla<br>";
     }
 }
 
-// Cerrar la tabla HTML
-echo "</table>";
+// Consultas para obtener los datos de las tablas
+$queries = [
+    "Usuarios" => "SELECT * FROM Usuarios",
+    "Habitaciones" => "SELECT * FROM Habitaciones",
+    "Reservas" => "SELECT * FROM Reservas",
+    "Servicios" => "SELECT * FROM Servicios",
+    "Servicios_Reservas" => "SELECT * FROM Servicios_Reservas",
+    "Trabajadores" => "SELECT * FROM Trabajadores"
+];
 
-
-// Mostrar los menores de 20 años en formato tabla
-// OPCION 1. FILTRAR EN LA CONSULTA.
-$query = "SELECT id, nombre, edad, curso, promociona FROM alumnos
-WHERE edad >= 20";
-$resultadoFiltrado = mysqli_query($conexion, $query);
-echo "
-<h2> Listado de estudiantes fistrado por edad > 20</h2>
-
-<table border='1'>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Edad</th>
-            <th>Curso</th>
-            <th> Promociona </th>
-        </tr>";
-
-// Recorrer cada fila de resultados y mostrarla
-while ($row = mysqli_fetch_assoc($resultadoFiltrado)) {
-    echo "<tr>
-            <td>" . $row['id'] . "</td>
-            <td>" . $row['nombre'] . "</td>
-            <td>" . $row['edad']. "</td>
-            <td>" . $row['curso'] . "</td>
-            <td>" . $row['promociona'] . "</td>
-        </tr>";
-    
+// Ejecutar las consultas y mostrar los datos
+foreach ($queries as $tabla => $query) {
+    mostrarDatos($conn, $query, $tabla);
 }
 
-// Cerrar la tabla HTML
-echo "</table>";
-
-// OPCION 2. FILTRAR EN LOS RESULTADOS DE LA CONSULTA
-$query = "SELECT id, nombre, edad, curso, promociona FROM alumnos";
-$resultadoFiltrado2 = mysqli_query($conexion, $query);
-echo "
-<h2> Listado de estudiantes filtrado por edad >20. Opcion 2 </h2>
-
-<table border='1'>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Edad</th>
-            <th>Curso</th>
-            <th> Promociona </th>
-        </tr>";
-
-// Recorrer cada fila de resultados y mostrarla
-while ($row = mysqli_fetch_assoc($resultadoFiltrado2)) {
-    $edad = $row['edad'];
-    if($edad >= 20){
-        echo "<tr>
-                <td>" . $row['id'] . "</td>
-                <td>" . $row['nombre'] . "</td>
-                <td>" . $row['edad']. "</td>
-                <td>" . $row['curso'] . "</td>
-                <td>" . $row['promociona'] . "</td>
-            </tr>";
-    }
-    
-}
-
-// Cerrar la tabla HTML
-echo "</table>";
-
-// Cerrar la conexión a la base de datos (opcional si no lo necesitas aquí)
-// mysqli_close($conexion);
+// Cerrar la conexión
+$conn->close();
 ?>

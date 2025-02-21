@@ -7,11 +7,11 @@ $usuario = "root";
 $contrasena = "";
 $nombre_base_datos = "hoteldb";
 
-$conn = new mysqli($servidor, $usuario, $contrasena, $nombre_base_datos);
+$conexion = new mysqli($servidor, $usuario, $contrasena, $nombre_base_datos);
 
 // Verificar la conexión
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+if ($conexion->connect_error) {
+    die("Connection failed: " . $conexion->connect_error);
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -26,15 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sql = "INSERT INTO Usuarios (Nombre, Apellido, Email, Teléfono, Dirección, Admin, Contraseña) 
             VALUES ('$nombre', '$apellido', '$email', '$telefono', '$direccion', 'No', '$contraseña')";
 
-    if ($conn->query($sql) === TRUE) {
+    if ($conexion->query($sql) === TRUE) {
         echo "Nuevo usuario registrado exitosamente. Puedes iniciar sesión.";
         header("Location: login.php");
     } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
+        echo "Error: " . $sql . "<br>" . $conexion->error;
     }
 }
 
-$conn->close();
+$conexion->close();
 ?>
 
 <!DOCTYPE html>

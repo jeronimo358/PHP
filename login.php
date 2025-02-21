@@ -7,11 +7,11 @@ $usuario = "root";       // Usuario (por defecto root en XAMPP)
 $contrasena = "";  
 $nombre_base_datos = "hoteldb";
 
-$conn = new mysqli($servidor, $usuario, $contrasena, $nombre_base_datos);
+$conexion = new mysqli($servidor, $usuario, $contrasena, $nombre_base_datos);
 
 // Verificar la conexión
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+if ($conexion->connect_error) {
+    die("Connection failed: " . $conexion->connect_error);
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -19,31 +19,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $contraseña = $_POST['contraseña'];
 
     // Consultar si el usuario existe en la tabla Usuarios
-    $sql = "SELECT * FROM Usuarios WHERE Email = '$email' AND Contraseña = '$contraseña'";
-    $result = $conn->query($sql);
+    $sql = "SELECT * FROM Usuarios WHERE Email = ?";  // Usar prepared statement para evitar inyección SQL
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param('s', $email);  // Vincular el parámetro
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        // Usuario encontrado
-        $user = $result->fetch_assoc();
+        $usuario = $result->fetch_assoc();
 
-        // Verificar si es admin o cliente
-        if ($user['Admin'] == 'Sí') {
-            // Redirigir a la página de admin
-            header("Location: admin.php");
-            exit();
+        // Verificar si la contraseña es correcta
+        if ($contraseña == $usuario['Contraseña']) { // Verificación de la contraseña hasheada
+            // Guardar los datos en la sesión
+            $_SESSION['ID_usuario'] = $usuario['ID_usuario'];
+            $_SESSION['Nombre'] = $usuario['Nombre'];
+            $_SESSION['Admin'] = $usuario['Admin'];
+
+            // Redirigir al cliente o admin según corresponda
+            if ($usuario['Admin'] == 'Sí') {
+                header("Location: admin.php"); // Redirige a la página de administrador
+                exit();
+            } else {
+                header("Location: cliente.php"); // Redirige a la página del cliente
+                exit();
+            }
         } else {
-            // Redirigir a la página de cliente
-            header("Location: cliente.php");
-            exit();
+            // Contraseña incorrecta
+            echo "<p style='color:red;'>Contraseña incorrecta. Por favor intente nuevamente.</p>";
         }
     } else {
-        // Usuario no encontrado, redirigir a registro
-        header("Location: registro.php");
-        exit();
+        // Usuario no encontrado, redirigir a registro.php
+        echo "<p style='color:red;'>Usuario no encontrado. Si no tienes cuenta, <a href='registro.php'>regístrate aquí</a>.</p>";
     }
+
+    $stmt->close();
 }
 
-$conn->close();
+$conexion->close();
 ?>
 
 <!DOCTYPE html>
@@ -62,5 +74,7 @@ $conn->close();
         <input type="password" id="contraseña" name="contraseña" required><br><br>
         <input type="submit" value="Iniciar sesión">
     </form>
+
+    <p>¿No tienes cuenta? <a href="registro.php">Regístrate aquí</a></p>
 </body>
 </html>

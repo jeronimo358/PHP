@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-// Verificar si el usuario está autenticado (si tiene sesión activa)
+// Verificar si el usuario esta autenticado (si tiene sesion activa)
 if (!isset($_SESSION['ID_usuario'])) {
-    header('Location: login.php'); // Redirigir al login si no está autenticado
+    header('Location: login.php'); // Redirigir al login si no esta autenticado
     exit();
 }
 
-// Obtener el ID del usuario desde la sesión
+// Obtener el ID del usuario desde la sesion
 $usuario_id = $_SESSION['ID_usuario'];
 
 echo "<h2>Bienvenido, " . $_SESSION['Nombre'] . "!</h2>";
@@ -19,23 +19,23 @@ $contrasena = ""; // Cambiar si es necesario
 $nombre_base_datos = "hoteldb"; // Nombre de la base de datos
 $conexion = new mysqli($servidor, $usuario, $contrasena, $nombre_base_datos);
 
-// Verificar si la conexión fue exitosa
+// Verificar si la conexion fue exitosa
 if ($conexion->connect_error) {
-    die("Conexión fallida: " . $conexion->connect_error);
+    die("Conexion fallida: " . $conexion->connect_error);
 }
 
 // Obtener las habitaciones disponibles
 $query_habitaciones = "SELECT * FROM Habitaciones WHERE Estado = 'Disponible'";
 $result_habitaciones = $conexion->query($query_habitaciones);
 
-echo "<h3>Selecciona una habitación:</h3>";
+echo "<h3>Selecciona una habitacion:</h3>";
 echo "<form action='reserva.php' method='post'>";
 echo "<select name='ID_habitacion' required>";
-echo "<option value='' disabled selected>Seleccione una habitación</option>";
+echo "<option value='' disabled selected>Seleccione una habitacion</option>";
 
 if ($result_habitaciones->num_rows > 0) {
     while ($habitacion = $result_habitaciones->fetch_assoc()) {
-        echo "<option value='" . $habitacion['ID_habitación'] . "'>" . 
+        echo "<option value='" . $habitacion['ID_habitacion'] . "'>" . 
              $habitacion['Tipo'] . " - $" . $habitacion['Precio_noche'] . " por noche</option>";
     }
 }

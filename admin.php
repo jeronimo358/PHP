@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nombre = $_POST['nombre'];
     $email = $_POST['email'];
     $contraseña = password_hash($_POST['contraseña'], PASSWORD_DEFAULT); // Contraseña cifrada
-    $direccion = $_POST['direccion'];
+    $direccion = $_POST['dirección'];
     $telefono = $_POST['telefono'];
     $admin = $_POST['admin'] ?? 'No'; // Por defecto, no es administrador
     $habitacion_id = $_POST['ID_habitacion'];
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Si es un nuevo usuario
     if (!$modificar_usuario) {
         // Insertar nuevo cliente
-        $query_cliente = "INSERT INTO Usuarios (Nombre, Email, Contraseña, Direccion, Telefono, Admin) VALUES (?, ?, ?, ?, ?, ?)";
+        $query_cliente = "INSERT INTO Usuarios (Nombre, Email, Contraseña, Dirección, Teléfono, Admin) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt_cliente = $conexion->prepare($query_cliente);
         $stmt_cliente->bind_param('ssssss', $nombre, $email, $contraseña, $direccion, $telefono, $admin);
         $stmt_cliente->execute();
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $cliente_id = $stmt_cliente->insert_id;
     } else {
         // Actualizar usuario existente
-        $query_cliente = "UPDATE Usuarios SET Nombre = ?, Email = ?, Contraseña = ?, Direccion = ?, Telefono = ?, Admin = ? WHERE ID_usuario = ?";
+        $query_cliente = "UPDATE Usuarios SET Nombre = ?, Email = ?, Contraseña = ?, Dirección = ?, Teléfono = ?, Admin = ? WHERE ID_usuario = ?";
         $stmt_cliente = $conexion->prepare($query_cliente);
         $stmt_cliente->bind_param('ssssssi', $nombre, $email, $contraseña, $direccion, $telefono, $admin, $usuario_modificar);
         $stmt_cliente->execute();
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt_asociar_servicio->execute();
     }
 
-    // Calcular el total de la reserva (habitacion + servicios)
+    // Calcular el total de la reserva (habitación + servicios)
     $total_reserva = $precio_habitacion + $total_servicios;
 
     // Actualizar el estado de la habitación (para que ya no esté disponible)
@@ -128,8 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     Nombre: <input type="text" name="nombre" value="<?php echo $modificar_usuario ? $usuario_actual['Nombre'] : ''; ?>" required><br><br>
     Correo electrónico: <input type="email" name="email" value="<?php echo $modificar_usuario ? $usuario_actual['Email'] : ''; ?>" required><br><br>
     Contraseña: <input type="password" name="contraseña" required><br><br>
-    Dirección: <input type="text" name="direccion" value="<?php echo $modificar_usuario ? $usuario_actual['Direccion'] : ''; ?>" required><br><br>
-    Teléfono: <input type="text" name="telefono" value="<?php echo $modificar_usuario ? $usuario_actual['Telefono'] : ''; ?>" required><br><br>
+    Dirección: <input type="text" name="dirección" value="<?php echo $modificar_usuario ? $usuario_actual['Dirección'] : ''; ?>" required><br><br>
+    Teléfono: <input type="text" name="telefono" value="<?php echo $modificar_usuario ? $usuario_actual['Teléfono'] : ''; ?>" required><br><br>
     Administrador: 
     <select name="admin">
         <option value="No" <?php echo ($modificar_usuario && $usuario_actual['Admin'] == 'No') ? 'selected' : ''; ?>>No</option>
@@ -182,8 +182,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <td>" . $usuario['ID_usuario'] . "</td>
                 <td>" . $usuario['Nombre'] . "</td>
                 <td>" . $usuario['Email'] . "</td>
-                <td>" . $usuario['Direccion'] . "</td>
-                <td>" . $usuario['Telefono'] . "</td>
+                <td>" . $usuario['Dirección'] . "</td>
+                <td>" . $usuario['Teléfono'] . "</td>
                 <td>" . $usuario['Admin'] . "</td>
             </tr>";
     }
@@ -233,5 +233,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     ?>
 </table>
-
-<!-- Mostrar 

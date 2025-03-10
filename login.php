@@ -1,80 +1,76 @@
 <?php
 session_start();
+include("conexion.php");
 
-// Conectar a la base de datos
-$servidor = "localhost:3307";
-$usuario = "root";       // Usuario (por defecto root en XAMPP)
-$contrasena = "";  
-$nombre_base_datos = "hoteldb";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+     $email = $_POST['email'];
+     $password = $_POST['password'];
+     
+     // Usar consultas preparadas para evitar SQL injection
+    $sql = "SELECT * FROM Usuarios WHERE Email = ?";
+     $stmt = mysqli_prepare($conexion, $sql);
+     
+     // Vincular parámetros y ejecutar la consulta
+     mysqli_stmt_bind_param($stmt, 's', $email);
+     mysqli_stmt_execute($stmt);
+     $result = mysqli_stmt_get_result($stmt);
 
-$conexion = new mysqli($servidor, $usuario, $contrasena, $nombre_base_datos);
+     if (mysqli_num_rows($result) == 1) {
+         $row = mysqli_fetch_assoc($result);
+         
+    // Verificar la contraseña usando password_verify
+    if (password_verify($password, $row['Contrasena'])) {
+             $_SESSION['Nombre'] = $row['Nombre'];
+             $_SESSION['Apellido'] = $row['Apellido'];
+             $_SESSION['Email'] = $row['Email'];
+             $_SESSION['Admin'] = $row['Admin']; 
 
-// Verificar la conexion
-if ($conexion->connect_error) {
-    die("Connection failed: " . $conexion->connect_error);
+     if ($row['Admin'] == 'Si') {
+                 header("Location: admin.php");
+             } else {
+                 header("Location: cliente.php");
+             }
+             exit();
+         } else {
+         $error = "Email o contrasena incorrectos";
+         }
+     } else {
+        $error = "Email o contrasena incorrectos";
+     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'];
-    $contrasena = $_POST['contrasena'];
-
-    // Consultar si el usuario existe en la tabla Usuarios
-    $sql = "SELECT * FROM Usuarios WHERE Email = ?";  // Usar prepared statement para evitar inyeccion SQL
-    $stmt = $conexion->prepare($sql);
-    $stmt->bind_param('s', $email);  // Vincular el parametro
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $usuario = $result->fetch_assoc();
-
-        // Verificar si la contrasena es correcta
-        if ($contrasena == $usuario['Contrasena']) { // Verificacion de la contrasena hasheada
-            // Guardar los datos en la sesion
-            $_SESSION['ID_usuario'] = $usuario['ID_usuario'];
-            $_SESSION['Nombre'] = $usuario['Nombre'];
-            $_SESSION['Admin'] = $usuario['Admin'];
-
-            // Redirigir al cliente o admin segun corresponda
-            if ($usuario['Admin'] == 'Si') {
-                header("Location: admin.php"); // Redirige a la pagina de administrador
-                exit();
-            } else {
-                header("Location: cliente.php"); // Redirige a la pagina del cliente
-                exit();
-            }
-        } else {
-            // Contrasena incorrecta
-            echo "<p style='color:red;'>Contrasena incorrecta. Por favor intente nuevamente.</p>";
-        }
-    } else {
-        // Usuario no encontrado, redirigir a registro.php
-        echo "<p style='color:red;'>Usuario no encontrado. Si no tienes cuenta, <a href='registro.php'>registrate aqui</a>.</p>";
-    }
-
-    $stmt->close();
-}
-
-$conexion->close();
+mysqli_close($conexion);
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iniciar Sesión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h2>Iniciar sesion</h2>
-    <form method="POST" action="">
-        <label for="email">Correo electronico:</label><br>
-        <input type="email" id="email" name="email" required><br><br>
-        <label for="contrasena">Contrasena:</label><br>
-        <input type="password" id="contrasena" name="contrasena" required><br><br>
-        <input type="submit" value="Iniciar sesion">
-    </form>
-
-    <p>¿No tienes cuenta? <a href="registro.php">Registrate aqui</a></p>
+<body class="bg-light">
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+         <div class="card shadow p-4" style="width: 400px;">
+             <h2 class="text-center">Iniciar Sesión</h2>
+             <?php if (isset($error)) { ?>
+                 <div class="alert alert-danger text-center"><?php echo $error; ?></div>
+             <?php } ?>
+             <form method="post" action="login.php">
+             <div class="mb-3">
+                 <label for="email" class="form-label">Email:</label>
+                 <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+                 <div class="mb-3">
+                <label for="password" class="form-label">Contraseña:</label>
+                 <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+            </form>
+            <p class="text-center mt-3">¿No tienes una cuenta? <a href="registrar.php">Regístrate aquí</a></p>
+         </div>
+     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -36,18 +36,18 @@ $tablas = ["Usuarios", "Habitaciones", "Reservas", "Servicios", "Servicios_Reser
 
                 // Obtener nombres de columnas de manera procedimental
                 $columnas = array();
-                if ($row = mysqli_fetch_assoc($result)) {
-                    $columnas = array_keys($row);
+                if ($row = mysqli_fetch_assoc($result)) { // obtener fila de resultados de consulta en forma de array asociado
+                    $columnas = array_keys($row); // deuelve el array con las keys
                     foreach ($columnas as $columna) {
                         echo "<th>" . $columna . "</th>";
                     }
                     echo "</tr></thead><tbody>";
 
                     // Reiniciar puntero para mostrar todas las filas
-                    mysqli_data_seek($result, 0);
+                    mysqli_data_seek($result, 0); // mueve el puntero interno de una consulta a una fila especifica
 
                     // Obtener datos de filas
-                    while ($row = mysqli_fetch_assoc($result)) {
+                    while ($row = mysqli_fetch_assoc($result)) { // obtener fila de resultados de consulta en forma de array asociado
                         echo "<tr>";
                         foreach ($columnas as $columna) {
                             echo "<td>" . $row[$columna] . "</td>";

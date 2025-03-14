@@ -205,7 +205,7 @@ $result_reservas = mysqli_stmt_get_result($stmt_reservas);
               <td><?php echo $reserva['Fecha_check_in']; ?></td>
               <td><?php echo $reserva['Fecha_check_out']; ?></td>
               <td><?php echo $reserva['Estado_reserva']; ?></td>
-              <td>$<?php echo number_format($reserva['Total_reserva'], 2); ?></td>
+              <td>$<?php echo number_format($reserva['Total_reserva'], 2); ?></td> <!-- Formatea numero decimales sumando separadores -->
               <td>
                 <form method="post" action="cliente.php" onsubmit="return confirm('¿Seguro que deseas cancelar esta reserva?');">
                   <input type="hidden" name="accion" value="cancelar">
@@ -231,7 +231,7 @@ $result_reservas = mysqli_stmt_get_result($stmt_reservas);
           <?php
           $sql_habitaciones = "SELECT * FROM Habitaciones WHERE Estado = 'Disponible'";
           $result_habitaciones = mysqli_query($conexion, $sql_habitaciones);
-          while ($row = mysqli_fetch_assoc($result_habitaciones)) {
+          while ($row = mysqli_fetch_assoc($result_habitaciones)) { // obtener fila de resultados de consulta en forma de array asociado
               echo "<option value='" . $row['ID_habitaciones'] . "'>" . $row['Tipo'] . " - $" . $row['Precio_noche'] . " por noche</option>";
           }
           ?>
@@ -244,7 +244,7 @@ $result_reservas = mysqli_stmt_get_result($stmt_reservas);
         <?php
         $sql_servicios = "SELECT * FROM Servicios";
         $result_servicios = mysqli_query($conexion, $sql_servicios);
-        while ($row = mysqli_fetch_assoc($result_servicios)) {
+        while ($row = mysqli_fetch_assoc($result_servicios)) { // obtener fila de resultados de consulta en forma de array asociado
             echo "<div class='form-check'>";
             echo "<input type='checkbox' name='servicios[]' value='" . $row['ID_servicios'] . "' class='form-check-input' id='servicio_" . $row['ID_servicios'] . "'>";
             echo "<label class='form-check-label' for='servicio_" . $row['ID_servicios'] . "'>" . $row['Nombre'] . " - $" . $row['Precio'] . "</label>";

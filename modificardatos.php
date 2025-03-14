@@ -19,7 +19,7 @@ function mostrarTablaConAcciones($conexion, $tabla) {
 
         // Obtener los nombres de las columnas de manera procedimental
         $columnas = array();
-        if ($row = mysqli_fetch_assoc($result)) {
+        if ($row = mysqli_fetch_assoc($result)) { // obtener fila de resultados de consulta en forma de array asociado
             $columnas = array_keys($row);
             mysqli_data_seek($result, 0); // Reiniciar puntero para no perder la primera fila
         }
@@ -68,12 +68,12 @@ function actualizarHabitacionesDisponibles($conexion) {
     $resultHabitacionesReservadas = mysqli_query($conexion, $sqlHabitacionesReservadas);
 
     $habitacionesReservadas = array();
-    while ($row = mysqli_fetch_assoc($resultHabitacionesReservadas)) {
+    while ($row = mysqli_fetch_assoc($resultHabitacionesReservadas)) { // obtener fila de resultados de consulta en forma de array asociado
         $habitacionesReservadas[] = $row['ID_habitaciones'];
     }
 
     if (!empty($habitacionesReservadas)) {
-        $habitacionesReservadasList = implode(",", $habitacionesReservadas);
+        $habitacionesReservadasList = implode(",", $habitacionesReservadas); // convierte array en una cadena texto
         $sqlActualizarHabitaciones = "UPDATE Habitaciones SET Estado = 'Disponible' WHERE ID_habitaciones NOT IN ($habitacionesReservadasList)";
         mysqli_query($conexion, $sqlActualizarHabitaciones);
     } else {
@@ -89,14 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
     $tabla = $_POST['tabla'];
     $id = $_POST['id'];
     // Se asume que la clave primaria es del formato "ID_" seguido del nombre de la tabla en minúsculas
-    $columna_primaria = "ID_" . strtolower($tabla);
+    $columna_primaria = "ID_" . strtolower($tabla); // Devuelve un string con todos los caracteres 
 
     // Si se elimina una reserva, actualizar el estado de la habitación a "Disponible"
     if ($tabla == "Reservas") {
         // Obtener el ID de la habitación relacionada con la reserva
         $sqlHabitacion = "SELECT ID_habitaciones FROM Reservas WHERE $columna_primaria = '$id'";
         $resultHabitacion = mysqli_query($conexion, $sqlHabitacion);
-        $rowHabitacion = mysqli_fetch_assoc($resultHabitacion);
+        $rowHabitacion = mysqli_fetch_assoc($resultHabitacion); // obtiene una fila de resultado de consulta de forma array asociado
         $id_habitacion = $rowHabitacion['ID_habitaciones'];
 
         // Actualizar el estado de la habitación a "Disponible"

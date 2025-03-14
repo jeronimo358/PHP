@@ -46,7 +46,7 @@ function consultarHabitacionesDisponibles($conexion) {
         <h3>Seleccionar Usuario</h3>
         <select id="id_usuario" name="id_usuario" class="form-control" required>
           <?php
-          while ($row_usuario = mysqli_fetch_assoc($result_usuarios)) {
+          while ($row_usuario = mysqli_fetch_assoc($result_usuarios)) { // obtiene una fila de resultado de consulta de forma array asociado
               echo "<option value='" . $row_usuario['ID_usuarios'] . "'>" . $row_usuario['Nombre'] . " " . $row_usuario['Apellido'] . " - " . $row_usuario['Email'] . "</option>";
           }
           ?>
@@ -57,7 +57,7 @@ function consultarHabitacionesDisponibles($conexion) {
         <h3>Seleccionar Habitación</h3>
         <select id="id_habitacion" name="id_habitacion" class="form-control" required>
           <?php
-          while ($row_habitacion = mysqli_fetch_assoc($result_habitaciones)) {
+          while ($row_habitacion = mysqli_fetch_assoc($result_habitaciones)) { // obtiene una fila de resultado de consulta de forma array asociado
               echo "<option value='" . $row_habitacion['ID_habitaciones'] . "'>" . $row_habitacion['Tipo'] . " - $" . $row_habitacion['Precio_noche'] . " por noche</option>";
           }
           ?>
@@ -67,7 +67,7 @@ function consultarHabitacionesDisponibles($conexion) {
       <div class="form-group">
         <h3>Seleccionar Servicios</h3>
         <?php
-        while ($row_servicio = mysqli_fetch_assoc($result_servicios)) {
+        while ($row_servicio = mysqli_fetch_assoc($result_servicios)) { // obtiene una fila de resultado de consulta de forma array asociado
             echo "<div class='form-check'>";
             echo "<input type='checkbox' class='form-check-input' id='servicio_" . $row_servicio['ID_servicios'] . "' name='servicios[]' value='" . $row_servicio['ID_servicios'] . "'>";
             echo "<label class='form-check-label' for='servicio_" . $row_servicio['ID_servicios'] . "'>" . $row_servicio['Nombre'] . " - $" . $row_servicio['Precio'] . "</label><br>";
@@ -104,7 +104,7 @@ function consultarHabitacionesDisponibles($conexion) {
         // Calcular total de los servicios seleccionados (si hay)
         $precio_servicios = obtenerPrecioServicios($conexion, $servicios); // como se hace esta abajo del todo
 
-        // Calcular noches sin usar DateTime
+        // Calcular noches sin usar DateTime // fecha a texto
         $noches = (strtotime($fecha_check_out) - strtotime($fecha_check_in)) / 86400; // 86400 segundos en un día
 
         // Calcular total de la reserva
@@ -114,7 +114,7 @@ function consultarHabitacionesDisponibles($conexion) {
         $sql_nueva_reserva = "INSERT INTO reservas (id_usuarios, ID_habitaciones, Fecha_check_in, Fecha_check_out, Estado_reserva, Total_reserva) 
                              VALUES ('$id_usuario', '$id_habitacion', '$fecha_check_in', '$fecha_check_out', 'Confirmada', '$total_reserva')";
         if (mysqli_query($conexion, $sql_nueva_reserva)) {
-            $id_reserva = mysqli_insert_id($conexion);
+            $id_reserva = mysqli_insert_id($conexion); // obtiene id autoincremental
 
             // Actualizar habitación a "Ocupada"
             $sql_actualizar_habitacion = "UPDATE Habitaciones SET Estado = 'Ocupada' WHERE ID_habitaciones = '$id_habitacion'";
@@ -137,7 +137,7 @@ function consultarHabitacionesDisponibles($conexion) {
     function obtenerPrecioHabitacion($conexion, $id_habitacion) {
         $sql_precio_habitacion = "SELECT Precio_noche FROM Habitaciones WHERE ID_habitaciones = '$id_habitacion'";
         $result_precio_habitacion = mysqli_query($conexion, $sql_precio_habitacion);
-        $row_precio_habitacion = mysqli_fetch_assoc($result_precio_habitacion);
+        $row_precio_habitacion = mysqli_fetch_assoc($result_precio_habitacion); // obtiene una fila de resultado de consulta de forma array asociado
         return $row_precio_habitacion ? $row_precio_habitacion['Precio_noche'] : false;
     }
 
@@ -148,7 +148,7 @@ function consultarHabitacionesDisponibles($conexion) {
         }
         $sql_precio_servicios = "SELECT SUM(Precio) AS Precio_total_servicios FROM Servicios WHERE ID_servicios IN (" . implode(",", $servicios) . ")";
         $result_precio_servicios = mysqli_query($conexion, $sql_precio_servicios);
-        $row_precio_servicios = mysqli_fetch_assoc($result_precio_servicios);
+        $row_precio_servicios = mysqli_fetch_assoc($result_precio_servicios);  // obtiene una fila de resultado de consulta de forma array asociado
         return $row_precio_servicios['Precio_total_servicios'];
     }
     ?>

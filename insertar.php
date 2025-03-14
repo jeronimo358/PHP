@@ -13,12 +13,12 @@ $tabla = $_GET['tabla'] ?? null; // Obtiene el valor del parámetro tabladesde l
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $tabla) { // Verifica que el formulario se haya enviado con POST
     // Recoger los datos enviados por el formulario
-    $campos = array_keys($_POST);
-    $valores = array_values($_POST);
+    $campos = array_keys($_POST); // devuelve el array con las key
+    $valores = array_values($_POST); // devuelve un array con los valores de un array asociativo
 
     // Hash de la contraseña si la tabla es Usuarios y existe el campo Contraseña
-    if ($tabla === 'Usuarios' && in_array('Contrasena', $campos)) {
-        $indiceContraseña = array_search('Contrasena', $campos);
+    if ($tabla === 'Usuarios' && in_array('Contrasena', $campos)) { // nos permite verificar el contenido de un array
+        $indiceContraseña = array_search('Contrasena', $campos); // busca un valor en un array y devuelve la clave de la primera coincidencia
         $valores[$indiceContraseña] = password_hash($valores[$indiceContraseña], PASSWORD_DEFAULT);
     }
 
@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $tabla) { // Verifica que el formula
       // Obtener la estructura de la tabla
       $sql = "DESCRIBE $tabla"; 
       $result = mysqli_query($conexion, $sql);
-      while ($row = mysqli_fetch_assoc($result)) {
+      while ($row = mysqli_fetch_assoc($result)) { // obtiene una fila de resultado de consulta de forma array asociado
           // Evitar el campo autoincremental hace dinamico los campos
           if ($row['Key'] != 'PRI') {
               echo "<div class='mb-3'>";

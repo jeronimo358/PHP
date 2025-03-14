@@ -20,7 +20,7 @@ if (!mysqli_select_db($conexion, $nombre_base_datos)) {
 }
 
 // Si llegamos aquí, la conexión y la selección de base de datos fueron exitosas
-echo "Conexión exitosa a la base de datos '$nombre_base_datos' en el servidor '$servidor'.";
+// echo "Conexión exitosa a la base de datos '$nombre_base_datos' en el servidor '$servidor'.";
 
 // Cerrar la conexión cuando ya no sea necesaria
 // mysqli_close($conexion);

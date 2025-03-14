@@ -3,12 +3,10 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3307
--- Tiempo de generación: 09-03-2025 a las 19:04:30
+-- Tiempo de generación: 13-03-2025 a las 12:19:40
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
-DROP DATABASE hoteldb;
-CREATE DATABASE hoteldb;
-USE hoteldb;
+
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
@@ -116,7 +114,7 @@ CREATE TABLE `servicios_reservas` (
 --
 
 CREATE TABLE `trabajadores` (
-  `ID_trabajador` int(11) NOT NULL,
+  `ID_trabajadores` int(11) NOT NULL,
   `Nombre` varchar(100) DEFAULT NULL,
   `Apellido` varchar(100) DEFAULT NULL,
   `Cargo` varchar(100) DEFAULT NULL,
@@ -129,7 +127,7 @@ CREATE TABLE `trabajadores` (
 -- Volcado de datos para la tabla `trabajadores`
 --
 
-INSERT INTO `trabajadores` (`ID_trabajador`, `Nombre`, `Apellido`, `Cargo`, `Telefono`, `Fecha_ingreso`, `Salario`) VALUES
+INSERT INTO `trabajadores` (`ID_trabajadores`, `Nombre`, `Apellido`, `Cargo`, `Telefono`, `Fecha_ingreso`, `Salario`) VALUES
 (1, 'Carlos', 'Gomez', 'Recepcionista', '5551234567', '2023-01-15', 1200.00),
 (2, 'Ana', 'Martinez', 'Camarera', '5559876543', '2024-02-10', 900.00),
 (5, 'Sofia', 'Castro', 'Gerente', '5553142569', '2020-11-30', 2200.00),
@@ -199,7 +197,7 @@ ALTER TABLE `servicios_reservas`
 -- Indices de la tabla `trabajadores`
 --
 ALTER TABLE `trabajadores`
-  ADD PRIMARY KEY (`ID_trabajador`);
+  ADD PRIMARY KEY (`ID_trabajadores`);
 
 --
 -- Indices de la tabla `usuarios`
@@ -222,31 +220,31 @@ ALTER TABLE `habitaciones`
 -- AUTO_INCREMENT de la tabla `reservas`
 --
 ALTER TABLE `reservas`
-  MODIFY `ID_reservas` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `ID_reservas` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT de la tabla `servicios`
 --
 ALTER TABLE `servicios`
-  MODIFY `ID_servicios` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `ID_servicios` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `servicios_reservas`
 --
 ALTER TABLE `servicios_reservas`
-  MODIFY `ID_servicio_reserva` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `ID_servicio_reserva` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT de la tabla `trabajadores`
 --
 ALTER TABLE `trabajadores`
-  MODIFY `ID_trabajador` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID_trabajadores` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `ID_usuarios` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `ID_usuarios` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- Restricciones para tablas volcadas

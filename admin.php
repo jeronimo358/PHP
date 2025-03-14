@@ -8,36 +8,6 @@ if (!isset($_SESSION['Email']) || $_SESSION['Admin'] != 'Si') {
     exit();
 }
 
-function mostrarTabla($conexion, $tabla) {
-    $sql = "SELECT * FROM $tabla";
-    $result = mysqli_query($conexion, $sql);
-
-    if (mysqli_num_rows($result) > 0) {
-        echo "<h3>Tabla: $tabla</h3>";
-        echo "<table class='table table-bordered table-striped'><thead><tr>";
-
-        // Obtener nombres de columnas
-        $columnas = array();
-        while ($fieldinfo = mysqli_fetch_field($result)) {
-            $columnas[] = $fieldinfo->name;
-            echo "<th>" . $fieldinfo->name . "</th>";
-        }
-        echo "</tr></thead><tbody>";
-
-        // Obtener datos de filas
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>";
-            foreach ($columnas as $columna) {
-                echo "<td>" . $row[$columna] . "</td>";
-            }
-            echo "</tr>";
-        }
-        echo "</tbody></table><br>";
-    } else {
-        echo "No se encontraron datos en la tabla $tabla.<br>";
-    }
-}
-
 $tablas = ["Usuarios", "Habitaciones", "Reservas", "Servicios", "Servicios_Reservas", "Trabajadores"];
 ?>
 
@@ -57,7 +27,38 @@ $tablas = ["Usuarios", "Habitaciones", "Reservas", "Servicios", "Servicios_Reser
 
         <?php
         foreach ($tablas as $tabla) {
-            mostrarTabla($conexion, $tabla);
+            $sql = "SELECT * FROM $tabla";
+            $result = mysqli_query($conexion, $sql);
+
+            if (mysqli_num_rows($result) > 0) {
+                echo "<h3>Tabla: $tabla</h3>";
+                echo "<table class='table table-bordered table-striped'><thead><tr>";
+
+                // Obtener nombres de columnas de manera procedimental
+                $columnas = array();
+                if ($row = mysqli_fetch_assoc($result)) {
+                    $columnas = array_keys($row);
+                    foreach ($columnas as $columna) {
+                        echo "<th>" . $columna . "</th>";
+                    }
+                    echo "</tr></thead><tbody>";
+
+                    // Reiniciar puntero para mostrar todas las filas
+                    mysqli_data_seek($result, 0);
+
+                    // Obtener datos de filas
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        echo "<tr>";
+                        foreach ($columnas as $columna) {
+                            echo "<td>" . $row[$columna] . "</td>";
+                        }
+                        echo "</tr>";
+                    }
+                }
+                echo "</tbody></table><br>";
+            } else {
+                echo "<div class='alert alert-warning'>No se encontraron datos en la tabla $tabla.</div><br>";
+            }
         }
         ?>
 

@@ -2,242 +2,281 @@
 session_start();
 include("conexion.php");
 
-// Verificar si el usuario está logueado
+// Si se solicita cerrar sesión mediante GET, se destruye la sesión y se redirige a login.php
+if (isset($_GET['accion']) && $_GET['accion'] == "logout") {
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
+
+// Verificar que el usuario haya iniciado sesión; si no, redirigir a login.php
 if (!isset($_SESSION['Email'])) {
     header("Location: login.php");
     exit();
 }
 
-// Obtener ID del usuario logueado
-$email = $_SESSION['Email'];
-$sql = "SELECT ID_usuarios FROM Usuarios WHERE Email = '$email'";
-$result = mysqli_query($conexion, $sql);
-$row = mysqli_fetch_assoc($result);
-$id_usuario = $row['ID_usuarios'];
-
-// Verificar si el usuario tiene reservas
-$sql_reservas = "SELECT * FROM Reservas WHERE ID_usuarios = '$id_usuario' AND Estado_reserva IN ('Confirmada', 'Pendiente')";
-$result_reservas = mysqli_query($conexion, $sql_reservas);
-$tiene_reservas = mysqli_num_rows($result_reservas) > 0;
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id_habitacion = $_POST['habitacion'];
-    $servicios = isset($_POST['servicios']) ? $_POST['servicios'] : [];
-    $fecha_check_in = $_POST['fecha_check_in'];
-    $fecha_check_out = $_POST['fecha_check_out'];
-
-    // Calcular el precio total de la reserva
-    $sql_precio_habitacion = "SELECT Precio_noche FROM Habitaciones WHERE ID_habitaciones = '$id_habitacion'";
-    $result_precio_habitacion = mysqli_query($conexion, $sql_precio_habitacion);
-    $row_precio_habitacion = mysqli_fetch_assoc($result_precio_habitacion);
-    $precio_habitacion = $row_precio_habitacion['Precio_noche'];
-
-    $precio_servicios = 0;
-    if (!empty($servicios)) {
-        $sql_precio_servicios = "SELECT SUM(Precio) AS Precio_total_servicios FROM Servicios WHERE ID_servicios IN (" . implode(",", $servicios) . ")";
-        $result_precio_servicios = mysqli_query($conexion, $sql_precio_servicios);
-        $row_precio_servicios = mysqli_fetch_assoc($result_precio_servicios);
-        $precio_servicios = $row_precio_servicios['Precio_total_servicios'];
-    }
-
-    $fecha_check_in_dt = new DateTime($fecha_check_in);
-    $fecha_check_out_dt = new DateTime($fecha_check_out);
-    $intervalo = $fecha_check_in_dt->diff($fecha_check_out_dt);
-    $noches = $intervalo->d;
-
-    $total_reserva = ($precio_habitacion * $noches) + $precio_servicios;
-
-    // Insertar nueva reserva
-    $sql_nueva_reserva = "INSERT INTO Reservas (ID_usuarios, ID_habitaciones, Fecha_check_in, Fecha_check_out, Estado_reserva, Total_reserva) 
-                          VALUES ('$id_usuario', '$id_habitacion', '$fecha_check_in', '$fecha_check_out', 'Pendiente', '$total_reserva')";
-    mysqli_query($conexion, $sql_nueva_reserva);
-    $id_reserva = mysqli_insert_id($conexion);
-
-    // Insertar servicios seleccionados
-    foreach ($servicios as $id_servicio) {
-        $sql_insertar_servicio = "INSERT INTO Servicios_Reservas (ID_reservas, ID_servicios, Cantidad) VALUES ('$id_reserva', '$id_servicio', 1)";
-        mysqli_query($conexion, $sql_insertar_servicio);
-    }
-
-    // Actualizar el estado de la habitación a 'Ocupada'
-    $sql_actualizar_habitacion = "UPDATE Habitaciones SET Estado = 'Ocupada' WHERE ID_habitaciones = '$id_habitacion'";
-    mysqli_query($conexion, $sql_actualizar_habitacion);
-
-    // Cambiar el estado de la reserva a 'Confirmada'
-    $sql_actualizar_reserva = "UPDATE Reservas SET Estado_reserva = 'Confirmada' WHERE ID_reservas = '$id_reserva'";
-    mysqli_query($conexion, $sql_actualizar_reserva);
-
-    // Redireccionar después de hacer la reserva para evitar reenvíos de formulario
-    header("Location: cliente.php");
-    exit;
+// Si el usuario es administrador, redirigirlo al panel de administración
+if ($_SESSION['Admin'] == 'Si') {
+    header("Location: admin.php");
+    exit();
 }
 
-// Eliminar reserva
-if (isset($_GET['eliminar_reserva'])) {
-    $id_reserva = $_GET['eliminar_reserva'];
+$current_date = date('Y-m-d');  // Fecha actual para restricciones en los inputs de fecha
+$mensaje = "";  // Variable para almacenar mensajes de éxito o error
+
+// Procesar formularios enviados
+if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se mande a traves del metodo post
+
+    // 1. Cancelación (eliminación) de reserva:
+    if (isset($_POST['accion']) && $_POST['accion'] == "cancelar" && isset($_POST['id_reserva'])) { // cancelar una reserva
+        $id_reserva = $_POST['id_reserva'];
+
+        // Obtener el ID de la habitación asociada a la reserva
+        $sql_select = "SELECT ID_habitaciones FROM reservas WHERE ID_reservas = '$id_reserva'";
+        $result_select = mysqli_query($conexion, $sql_select);
+        if ($result_select && mysqli_num_rows($result_select) > 0) {
+            $row_select = mysqli_fetch_assoc($result_select);
+            $id_habitacion = $row_select['ID_habitaciones'];
+
+            // Eliminar la reserva
+            $sql_delete = "DELETE FROM reservas WHERE ID_reservas = '$id_reserva'";
+            if (mysqli_query($conexion, $sql_delete)) {
+                // Actualizar la habitación a "Disponible"
+                $sql_update_room = "UPDATE Habitaciones SET Estado = 'Disponible' WHERE ID_habitaciones = '$id_habitacion'";
+                mysqli_query($conexion, $sql_update_room);
+                header("Location: cliente.php?mensaje=cancelado");
+                exit();
+            } else {
+                $mensaje = "<div class='alert alert-danger'>Error al cancelar la reserva: " . mysqli_error($conexion) . "</div>";
+            }
+        } else {
+            $mensaje = "<div class='alert alert-danger'>No se encontró la reserva.</div>";
+        }
+    }
     
-    // Obtener el ID de la habitación
-    $sql_habitacion = "SELECT ID_habitaciones FROM Reservas WHERE ID_reservas = '$id_reserva'";
-    $result_habitacion = mysqli_query($conexion, $sql_habitacion);
-    $row_habitacion = mysqli_fetch_assoc($result_habitacion);
-    $id_habitacion = $row_habitacion['ID_habitaciones'];
-
-    // Eliminar la reserva
-    $sqlEliminar = "DELETE FROM Reservas WHERE ID_reservas = '$id_reserva'";
-    mysqli_query($conexion, $sqlEliminar);
-
-    // Actualizar el estado de la habitación a 'Disponible' después de eliminar la reserva
-    $sql_actualizar_habitacion = "UPDATE Habitaciones SET Estado = 'Disponible' WHERE ID_habitaciones = '$id_habitacion'";
-    mysqli_query($conexion, $sql_actualizar_habitacion);
-
-    // Redireccionar después de eliminar la reserva
-    header("Location: cliente.php");
-    exit;
-}
-
-// Verificar las reservas confirmadas que han finalizado
-$current_date = date('Y-m-d');
-$sql_check_reservas = "SELECT * FROM Reservas WHERE Estado_reserva = 'Confirmada' AND Fecha_check_out < '$current_date'";
-
-$result_check_reservas = mysqli_query($conexion, $sql_check_reservas);
-while ($row_reserva = mysqli_fetch_assoc($result_check_reservas)) {
-    // Cambiar el estado de la habitación a 'Disponible'
-    $id_habitacion = $row_reserva['ID_habitaciones'];
-    $sql_actualizar_habitacion = "UPDATE Habitaciones SET Estado = 'Disponible' WHERE ID_habitaciones = '$id_habitacion'";
-    mysqli_query($conexion, $sql_actualizar_habitacion);
-
-    // Opcional: Cambiar el estado de la reserva a 'Finalizada'
-    $sql_actualizar_reserva = "UPDATE Reservas SET Estado_reserva = 'Finalizada' WHERE ID_reservas = '{$row_reserva['ID_reservas']}'";
-    mysqli_query($conexion, $sql_actualizar_reserva);
-}
-
-// Restaurar habitaciones "Ocupadas" sin reservas en la tabla "Reservas"
-$sql_habitaciones_ocupadas = "SELECT * FROM Habitaciones WHERE Estado = 'Ocupada'";
-$result_habitaciones_ocupadas = mysqli_query($conexion, $sql_habitaciones_ocupadas);
-
-while ($row_habitacion_ocupada = mysqli_fetch_assoc($result_habitaciones_ocupadas)) {
-    $id_habitacion = $row_habitacion_ocupada['ID_habitaciones'];
-
-    // Verificar si la habitación tiene reservas activas
-    $sql_verificar_reserva = "SELECT * FROM Reservas WHERE ID_habitaciones = '$id_habitacion' AND Estado_reserva IN ('Confirmada', 'Pendiente')";
-    $result_verificar_reserva = mysqli_query($conexion, $sql_verificar_reserva);
-
-    if (mysqli_num_rows($result_verificar_reserva) == 0) {
-        // Si no hay reservas asociadas, actualizar el estado de la habitación a 'Disponible'
-        $sql_actualizar_habitacion = "UPDATE Habitaciones SET Estado = 'Disponible' WHERE ID_habitaciones = '$id_habitacion'";
-        mysqli_query($conexion, $sql_actualizar_habitacion);
+    // 2. Realizar una nueva reserva:
+    if (isset($_POST['accion']) && $_POST['accion'] == "reservar") {
+        // Obtener el usuario actual a partir del email almacenado en sesión
+        $user_email = $_SESSION['Email'];
+        $sql_user = "SELECT ID_usuarios FROM usuarios WHERE Email = ?";
+        $stmt_user = mysqli_prepare($conexion, $sql_user);
+        mysqli_stmt_bind_param($stmt_user, "s", $user_email); // para enlazar valores de variables a una consulta preparada en MySQL
+        mysqli_stmt_execute($stmt_user); 
+        $result_user = mysqli_stmt_get_result($stmt_user);
+        if (mysqli_num_rows($result_user) == 0) { // evita inyeccion sql
+            $mensaje = "<div class='alert alert-danger'>Usuario no encontrado.</div>";
+        } else {
+            $user_data = mysqli_fetch_assoc($result_user);
+            $id_usuario = $user_data['ID_usuarios'];
+            
+            // Recoger datos del formulario
+            $id_habitacion = $_POST['id_habitacion'];
+            $fecha_check_in = $_POST['fecha_check_in'];
+            $fecha_check_out = $_POST['fecha_check_out'];
+            $servicios = isset($_POST['servicios']) ? $_POST['servicios'] : array();
+            
+            // Validar fechas: la fecha de check-out no debe ser anterior a la de check-in
+            if ($fecha_check_out < $fecha_check_in) {
+                $mensaje = "<div class='alert alert-danger'>La fecha de check-out no puede ser anterior a la de check-in.</div>";
+            } else {
+                // Calcular el número de noches
+                $fecha_check_in_ts = strtotime($fecha_check_in);
+                $fecha_check_out_ts = strtotime($fecha_check_out);
+                $interval_seconds = $fecha_check_out_ts - $fecha_check_in_ts;
+                $noches = floor($interval_seconds / (60 * 60 * 24));
+                if ($noches <= 0) {
+                    $mensaje = "<div class='alert alert-danger'>Debe seleccionar al menos una noche de reserva.</div>";
+                } else {
+                    // Consultar el precio de la habitación seleccionada
+                    $sql_price = "SELECT Precio_noche FROM Habitaciones WHERE ID_habitaciones = '$id_habitacion'";
+                    $result_price = mysqli_query($conexion, $sql_price);
+                    $row_price = mysqli_fetch_assoc($result_price);
+                    if (!$row_price) {
+                        $mensaje = "<div class='alert alert-danger'>No se pudo obtener el precio de la habitación.</div>";
+                    } else {
+                        $precio_habitacion = $row_price['Precio_noche'];
+                        // Calcular el precio total de los servicios (si se seleccionaron)
+                        $precio_servicios = 0;
+                        if (!empty($servicios)) {
+                            $sql_serv = "SELECT SUM(Precio) AS total FROM Servicios WHERE ID_servicios IN (" . implode(",", $servicios) . ")";
+                            $result_serv = mysqli_query($conexion, $sql_serv);
+                            $row_serv = mysqli_fetch_assoc($result_serv);
+                            $precio_servicios = $row_serv['total'];
+                        }
+                        // Calcular el total de la reserva
+                        $total_reserva = ($precio_habitacion * $noches) + $precio_servicios;
+                        
+                        // Insertar la nueva reserva con estado "Confirmada"
+                        $sql_insert = "INSERT INTO reservas (id_usuarios, ID_habitaciones, Fecha_check_in, Fecha_check_out, Estado_reserva, Total_reserva)
+                                       VALUES ('$id_usuario', '$id_habitacion', '$fecha_check_in', '$fecha_check_out', 'Confirmada', '$total_reserva')";
+                        if (mysqli_query($conexion, $sql_insert)) {
+                            $id_reserva = mysqli_insert_id($conexion);
+                            
+                            // Actualizar la habitación a "Ocupada"
+                            $sql_update = "UPDATE Habitaciones SET Estado = 'Ocupada' WHERE ID_habitaciones = '$id_habitacion'";
+                            mysqli_query($conexion, $sql_update);
+                            
+                            // Insertar los servicios seleccionados en la tabla Servicios_Reservas
+                            foreach ($servicios as $id_servicio) {
+                                $sql_ins_serv = "INSERT INTO Servicios_Reservas (ID_reservas, ID_servicios, Cantidad)
+                                                 VALUES ('$id_reserva', '$id_servicio', 1)";
+                                mysqli_query($conexion, $sql_ins_serv);
+                            }
+                            
+                            $mensaje = "<div class='alert alert-success'>Reserva realizada con éxito. ID de la reserva: $id_reserva</div>";
+                        } else {
+                            $mensaje = "<div class='alert alert-danger'>Error al realizar la reserva: " . mysqli_error($conexion) . "</div>";
+                        }
+                    }
+                }
+            }
+        }
     }
+} // Fin de procesamiento de formularios
+
+// Si venimos de una redirección tras cancelar, mostrar mensaje
+if (isset($_GET['mensaje']) && $_GET['mensaje'] == "cancelado") {
+    $mensaje = "<div class='alert alert-success'>Reserva cancelada correctamente.</div>";
 }
+
+// Obtener los datos del usuario para mostrar sus reservas si las tiene
+$user_email = $_SESSION['Email'];
+$sql_usuario = "SELECT ID_usuarios, Nombre, Apellido FROM usuarios WHERE Email = ?";
+$stmt = mysqli_prepare($conexion, $sql_usuario);
+mysqli_stmt_bind_param($stmt, "s", $user_email);
+mysqli_stmt_execute($stmt);
+$result_usuario = mysqli_stmt_get_result($stmt);
+if (mysqli_num_rows($result_usuario) == 0) {
+    echo "Usuario no encontrado.";
+    exit();
+}
+$usuario = mysqli_fetch_assoc($result_usuario);
+$id_usuario = $usuario['ID_usuarios'];
+$nombre = $usuario['Nombre'];
+$apellido = $usuario['Apellido'];
+
+// Consultar únicamente las reservas confirmadas del usuario
+$sql_reservas = "SELECT r.ID_reservas, r.Fecha_check_in, r.Fecha_check_out, r.Estado_reserva, r.Total_reserva, h.Tipo AS HabitacionTipo 
+                 FROM reservas r 
+                 JOIN habitaciones h ON r.ID_habitaciones = h.ID_habitaciones 
+                 WHERE r.id_usuarios = ? AND r.Estado_reserva = 'Confirmada'";
+$stmt_reservas = mysqli_prepare($conexion, $sql_reservas);
+mysqli_stmt_bind_param($stmt_reservas, "i", $id_usuario);
+mysqli_stmt_execute($stmt_reservas);
+$result_reservas = mysqli_stmt_get_result($stmt_reservas);
+
+// Formulario de reservas html
 ?>
 
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cliente - Reservas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cliente - Mis Reservas</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-    <div class="container mt-5">
-        <div class="card shadow-lg">
-            <div class="card-header bg-primary text-white text-center">
-                <h2>Bienvenido, <?php echo $_SESSION['Nombre'] . " " . $_SESSION['Apellido']; ?></h2>
-            </div>
-            <div class="card-body">
-                <?php if ($tiene_reservas) { ?>
-                    <h3>Tus Reservas</h3>
-                    <table class="table table-bordered">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Habitación</th>
-                                <th>Check-in</th>
-                                <th>Check-out</th>
-                                <th>Estado</th>
-                                <th>Total</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row_reserva = mysqli_fetch_assoc($result_reservas)) { ?>
-                                <tr>
-                                    <td><?php echo $row_reserva['ID_habitaciones']; ?></td>
-                                    <td><?php echo $row_reserva['Fecha_check_in']; ?></td>
-                                    <td><?php echo $row_reserva['Fecha_check_out']; ?></td>
-                                    <td><span class="badge bg-success"><?php echo $row_reserva['Estado_reserva']; ?></span></td>
-                                    <td>$<?php echo number_format($row_reserva['Total_reserva'], 2); ?></td>
-                                    <td><a href="cliente.php?eliminar_reserva=<?php echo $row_reserva['ID_reservas']; ?>" class="btn btn-danger btn-sm">Eliminar</a></td>
-                                </tr>
-                            <?php } ?>
-                        </tbody>
-                    </table>
-                <?php } else { ?>
-                    <p class="alert alert-info">No tienes reservas pendientes o confirmadas.</p>
-                <?php } ?>
+  <div class="container mt-5">
+    <?php echo $mensaje; ?>
 
-                <h3>Hacer una nueva reserva</h3>
-                <form method="post" action="cliente.php">
-                    <div class="mb-3">
-                        <label for="habitacion" class="form-label">Habitación:</label>
-                        <select id="habitacion" name="habitacion" class="form-select" required>
-                            <?php
-                            $sql_habitaciones = "SELECT * FROM Habitaciones WHERE Estado = 'Disponible'";
-                            $result_habitaciones = mysqli_query($conexion, $sql_habitaciones);
-                            while ($row_habitacion = mysqli_fetch_assoc($result_habitaciones)) {
-                                echo "<option value='" . $row_habitacion['ID_habitaciones'] . "'>" . $row_habitacion['Tipo'] . " - $" . $row_habitacion['Precio_noche'] . " por noche</option>";
-                            }
-                            ?>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="servicios" class="form-label">Servicios:</label>
-                        <?php
-                        $sql_servicios = "SELECT * FROM Servicios";
-                        $result_servicios = mysqli_query($conexion, $sql_servicios);
-                        while ($row_servicio = mysqli_fetch_assoc($result_servicios)) {
-                            echo "<div class='form-check'>";
-                            echo "<input class='form-check-input' type='checkbox' id='servicio_" . $row_servicio['ID_servicios'] . "' name='servicios[]' value='" . $row_servicio['ID_servicios'] . "'>";
-                            echo "<label class='form-check-label' for='servicio_" . $row_servicio['ID_servicios'] . "'>" . $row_servicio['Nombre'] . " - $" . $row_servicio['Precio'] . "</label>";
-                            echo "</div>";
-                        }
-                        ?>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="fecha_check_in" class="form-label">Fecha de Check-in:</label>
-                        <input type="date" id="fecha_check_in" name="fecha_check_in" class="form-control" required min="<?php echo date('Y-m-d'); ?>">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="fecha_check_out" class="form-label">Fecha de Check-out:</label>
-                        <input type="date" id="fecha_check_out" name="fecha_check_out" class="form-control" required min="<?php echo date('Y-m-d'); ?>">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Hacer Reserva</button>
+    <h2 class="text-center">Bienvenido, <?php echo htmlspecialchars($nombre . " " . $apellido); ?></h2>
+    
+    <!-- Mostrar reservas actuales -->
+    <h3 class="text-center mb-4">Mis Reservas</h3>
+    <?php if (mysqli_num_rows($result_reservas) > 0) { ?>
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>ID Reserva</th>
+            <th>Habitación</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Confirmación</th>
+            <th>Total Reserva</th>
+            <th>Opciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php while ($reserva = mysqli_fetch_assoc($result_reservas)) { ?>
+            <tr>
+              <td><?php echo $reserva['ID_reservas']; ?></td>
+              <td><?php echo htmlspecialchars($reserva['HabitacionTipo']); ?></td>
+              <td><?php echo $reserva['Fecha_check_in']; ?></td>
+              <td><?php echo $reserva['Fecha_check_out']; ?></td>
+              <td><?php echo $reserva['Estado_reserva']; ?></td>
+              <td>$<?php echo number_format($reserva['Total_reserva'], 2); ?></td>
+              <td>
+                <form method="post" action="cliente.php" onsubmit="return confirm('¿Seguro que deseas cancelar esta reserva?');">
+                  <input type="hidden" name="accion" value="cancelar">
+                  <input type="hidden" name="id_reserva" value="<?php echo $reserva['ID_reservas']; ?>">
+                  <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
                 </form>
+              </td>
+            </tr>
+          <?php } ?>
+        </tbody>
+      </table>
+    <?php } else { ?>
+      <div class="alert alert-info text-center">No tienes reservas registradas.</div>
+    <?php } ?>
 
-                <br>
-                <a href="login.php">
-                    <button class="btn btn-secondary">Volver al Login</button>
-                </a>
-            </div>
-        </div>
+    <!-- Formulario para hacer una nueva reserva -->
+    <h3 class="text-center mt-5">Hacer Nueva Reserva</h3>
+    <form method="post" action="cliente.php">
+      <!-- Seleccionar Habitación (solo las Disponibles) -->
+      <div class="form-group">
+        <label for="id_habitacion">Seleccionar Habitación</label>
+        <select name="id_habitacion" id="id_habitacion" class="form-control" required>
+          <?php
+          $sql_habitaciones = "SELECT * FROM Habitaciones WHERE Estado = 'Disponible'";
+          $result_habitaciones = mysqli_query($conexion, $sql_habitaciones);
+          while ($row = mysqli_fetch_assoc($result_habitaciones)) {
+              echo "<option value='" . $row['ID_habitaciones'] . "'>" . $row['Tipo'] . " - $" . $row['Precio_noche'] . " por noche</option>";
+          }
+          ?>
+        </select>
+      </div>
+      <br>
+      <!-- Seleccionar Servicios -->
+      <div class="form-group">
+        <label>Seleccionar Servicios</label>
+        <?php
+        $sql_servicios = "SELECT * FROM Servicios";
+        $result_servicios = mysqli_query($conexion, $sql_servicios);
+        while ($row = mysqli_fetch_assoc($result_servicios)) {
+            echo "<div class='form-check'>";
+            echo "<input type='checkbox' name='servicios[]' value='" . $row['ID_servicios'] . "' class='form-check-input' id='servicio_" . $row['ID_servicios'] . "'>";
+            echo "<label class='form-check-label' for='servicio_" . $row['ID_servicios'] . "'>" . $row['Nombre'] . " - $" . $row['Precio'] . "</label>";
+            echo "</div>";
+        }
+        ?>
+      </div>
+      <br>
+      <!-- Fechas de la Reserva -->
+      <div class="form-group">
+        <label for="fecha_check_in">Fecha de Check-in</label>
+        <input type="date" name="fecha_check_in" id="fecha_check_in" class="form-control" required min="<?php echo $current_date; ?>">
+        <br>
+        <label for="fecha_check_out">Fecha de Check-out</label>
+        <input type="date" name="fecha_check_out" id="fecha_check_out" class="form-control" required min="<?php echo $current_date; ?>">
+      </div>
+      <br>
+      <div class="text-center">
+        <input type="hidden" name="accion" value="reservar">
+        <button type="submit" class="btn btn-success">Hacer Reserva</button>
+      </div>
+    </form>
+
+    <!-- Botón para Cerrar Sesión -->
+    <div class="text-center mt-4">
+      <a href="cliente.php?accion=logout" class="btn btn-secondary">Cerrar Sesión</a>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Validación de fecha check-out no puede ser anterior a check-in -->
-    <script>
-        document.getElementById('fecha_check_out').addEventListener('change', function() {
-            var checkInDate = new Date(document.getElementById('fecha_check_in').value);
-            var checkOutDate = new Date(this.value);
-            
-            if (checkOutDate < checkInDate) {
-                alert("La fecha de check-out no puede ser anterior a la de check-in.");
-                this.value = ''; // Reset the check-out date
-            }
-        });
-    </script>
+  </div>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
+
+<?php
+mysqli_close($conexion);
+?>

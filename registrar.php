@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se manden los datos 
     $sql_verificar_email = "SELECT * FROM usuarios WHERE Email = '$email'";
     $result_verificar_email = mysqli_query($conexion, $sql_verificar_email);
 
-    if (mysqli_num_rows($result_verificar_email) == 0) { // verifica que no haya correos iguales
+    if (mysqli_num_rows($result_verificar_email) == 0) { // verifica que no haya correos iguales y cuantas filas de resultados
         // Cifrar la contraseña
         $hashed_password = password_hash($contrasena, PASSWORD_DEFAULT);
         // Insertar nuevo usuario

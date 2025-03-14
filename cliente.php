@@ -4,7 +4,7 @@ include("conexion.php");
 
 // Si se solicita cerrar sesión mediante GET, se destruye la sesión y se redirige a login.php
 if (isset($_GET['accion']) && $_GET['accion'] == "logout") {
-    session_destroy();
+    session_destroy(); // destruye toda informacion en esa sesion
     header("Location: login.php");
     exit();
 }
@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se mande a traves de
         $sql_select = "SELECT ID_habitaciones FROM reservas WHERE ID_reservas = '$id_reserva'";
         $result_select = mysqli_query($conexion, $sql_select);
         if ($result_select && mysqli_num_rows($result_select) > 0) {
-            $row_select = mysqli_fetch_assoc($result_select);
+            $row_select = mysqli_fetch_assoc($result_select); // obtiene una fila de resultados de consulta en forma de array asociado
             $id_habitacion = $row_select['ID_habitaciones'];
 
             // Eliminar la reserva
@@ -61,12 +61,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se mande a traves de
         $sql_user = "SELECT ID_usuarios FROM usuarios WHERE Email = ?";
         $stmt_user = mysqli_prepare($conexion, $sql_user);
         mysqli_stmt_bind_param($stmt_user, "s", $user_email); // para enlazar valores de variables a una consulta preparada en MySQL
-        mysqli_stmt_execute($stmt_user); 
-        $result_user = mysqli_stmt_get_result($stmt_user);
+        mysqli_stmt_execute($stmt_user);  // ejecuta consulta preparada
+        $result_user = mysqli_stmt_get_result($stmt_user); // obtiene el resultado
         if (mysqli_num_rows($result_user) == 0) { // evita inyeccion sql
             $mensaje = "<div class='alert alert-danger'>Usuario no encontrado.</div>";
         } else {
-            $user_data = mysqli_fetch_assoc($result_user);
+            $user_data = mysqli_fetch_assoc($result_user); // obtiene una fila de resultados de consulta en forma de array asociado
             $id_usuario = $user_data['ID_usuarios'];
             
             // Recoger datos del formulario
@@ -80,7 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se mande a traves de
                 $mensaje = "<div class='alert alert-danger'>La fecha de check-out no puede ser anterior a la de check-in.</div>";
             } else {
                 // Calcular el número de noches
-                $fecha_check_in_ts = strtotime($fecha_check_in);
+                $fecha_check_in_ts = strtotime($fecha_check_in); // fecha a texto
                 $fecha_check_out_ts = strtotime($fecha_check_out);
                 $interval_seconds = $fecha_check_out_ts - $fecha_check_in_ts;
                 $noches = floor($interval_seconds / (60 * 60 * 24));
@@ -90,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se mande a traves de
                     // Consultar el precio de la habitación seleccionada
                     $sql_price = "SELECT Precio_noche FROM Habitaciones WHERE ID_habitaciones = '$id_habitacion'";
                     $result_price = mysqli_query($conexion, $sql_price);
-                    $row_price = mysqli_fetch_assoc($result_price);
+                    $row_price = mysqli_fetch_assoc($result_price); // obtiene una fila de resultados de consulta en forma de array asociado
                     if (!$row_price) {
                         $mensaje = "<div class='alert alert-danger'>No se pudo obtener el precio de la habitación.</div>";
                     } else {
@@ -100,7 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se mande a traves de
                         if (!empty($servicios)) {
                             $sql_serv = "SELECT SUM(Precio) AS total FROM Servicios WHERE ID_servicios IN (" . implode(",", $servicios) . ")";
                             $result_serv = mysqli_query($conexion, $sql_serv);
-                            $row_serv = mysqli_fetch_assoc($result_serv);
+                            $row_serv = mysqli_fetch_assoc($result_serv); // obtiene una fila de resultados de consulta en forma de array asociado
                             $precio_servicios = $row_serv['total'];
                         }
                         // Calcular el total de la reserva
@@ -110,7 +110,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { // verifica que se mande a traves de
                         $sql_insert = "INSERT INTO reservas (id_usuarios, ID_habitaciones, Fecha_check_in, Fecha_check_out, Estado_reserva, Total_reserva)
                                        VALUES ('$id_usuario', '$id_habitacion', '$fecha_check_in', '$fecha_check_out', 'Confirmada', '$total_reserva')";
                         if (mysqli_query($conexion, $sql_insert)) {
-                            $id_reserva = mysqli_insert_id($conexion);
+                            $id_reserva = mysqli_insert_id($conexion); // obtiene el id autoincremental
                             
                             // Actualizar la habitación a "Ocupada"
                             $sql_update = "UPDATE Habitaciones SET Estado = 'Ocupada' WHERE ID_habitaciones = '$id_habitacion'";
@@ -143,9 +143,9 @@ if (isset($_GET['mensaje']) && $_GET['mensaje'] == "cancelado") {
 $user_email = $_SESSION['Email'];
 $sql_usuario = "SELECT ID_usuarios, Nombre, Apellido FROM usuarios WHERE Email = ?";
 $stmt = mysqli_prepare($conexion, $sql_usuario);
-mysqli_stmt_bind_param($stmt, "s", $user_email);
+mysqli_stmt_bind_param($stmt, "s", $user_email); // enlaza valores de variables a consulta preparada.
 mysqli_stmt_execute($stmt);
-$result_usuario = mysqli_stmt_get_result($stmt);
+$result_usuario = mysqli_stmt_get_result($stmt); // se obtiene resultado
 if (mysqli_num_rows($result_usuario) == 0) {
     echo "Usuario no encontrado.";
     exit();
@@ -161,7 +161,7 @@ $sql_reservas = "SELECT r.ID_reservas, r.Fecha_check_in, r.Fecha_check_out, r.Es
                  JOIN habitaciones h ON r.ID_habitaciones = h.ID_habitaciones 
                  WHERE r.id_usuarios = ? AND r.Estado_reserva = 'Confirmada'";
 $stmt_reservas = mysqli_prepare($conexion, $sql_reservas);
-mysqli_stmt_bind_param($stmt_reservas, "i", $id_usuario);
+mysqli_stmt_bind_param($stmt_reservas, "i", $id_usuario); // enlaza valores de variables a consulta preparada.
 mysqli_stmt_execute($stmt_reservas);
 $result_reservas = mysqli_stmt_get_result($stmt_reservas);
 

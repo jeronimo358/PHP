@@ -19,16 +19,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") { //Procesa el formulario cuando se en
 
     // Consulta preparada para evitar inyección SQL
     $sql = "SELECT * FROM usuarios WHERE Email = ?";
-    $stmt = mysqli_prepare($conexion, $sql);
+    $stmt = mysqli_prepare($conexion, $sql); // consulta preparada
     mysqli_stmt_bind_param($stmt, "s", $email); //sustituye ? por el email
     mysqli_stmt_execute($stmt); // se ejecuta
     $result = mysqli_stmt_get_result($stmt); // se obtiene el resultado
 
-    if (mysqli_num_rows($result) == 1) { // verifica que exista el usuario
+    if (mysqli_num_rows($result) == 1) { // verifica que exista el usuario ve cuantas filas hay de ese resultado
         $row = mysqli_fetch_assoc($result); // obtiene lo datos
         // Verificar la contraseña usando password_verify
         if (password_verify($password, $row['Contrasena'])) {
-            $_SESSION['Nombre'] = $row['Nombre']; // accede al valor de la columna Nombreen una fila obtenida de una consulta a la base de datos.
+            $_SESSION['Nombre'] = $row['Nombre']; // accede al valor de la columna Nombre una fila obtenida de una consulta a la base de datos.
             $_SESSION['Apellido'] = $row['Apellido'];
             $_SESSION['Email'] = $row['Email'];
             $_SESSION['Admin'] = $row['Admin'];
